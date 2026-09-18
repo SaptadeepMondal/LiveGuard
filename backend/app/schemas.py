@@ -1,6 +1,15 @@
+import uuid
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
+
+class CowrieLogEvent(BaseModel):
+    eventid: str
+    src_ip: str
+    dst_port: Optional[int] = 0
+    system: Optional[str] = "unknown"
+    message: Optional[str] = ""
+    timestamp: Optional[datetime] = None
 
 class EventBase(BaseModel):
     src_ip: str
@@ -17,7 +26,7 @@ class EventCreate(EventBase):
     timestamp: Optional[datetime] = None
 
 class EventResponse(EventBase):
-    id: str
+    id: uuid.UUID
     timestamp: datetime
 
     class Config:

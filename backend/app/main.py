@@ -1,6 +1,6 @@
 import asyncio
 from datetime import datetime
-from fastapi import FastAPI, Depends, Header, HTTPException, status
+from fastapi import FastAPI, Depends, Header, HTTPException, status, WebSocket, WebSocketDisconnect, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -10,6 +10,7 @@ from app.models import Event
 from app.schemas import EventResponse, CowrieLogEvent
 from app.demo_mode import run_demo_mode
 from app import geoip
+from app.ws import manager
 
 # Create SQLite tables
 Base.metadata.create_all(bind=engine)
@@ -26,6 +27,7 @@ def verify_ingest_secret(x_ingest_secret: str = Header(...)):
 
 @app.on_event("startup")
 async def startup_event():
+    asyncio.create_task(manager._broadcast_task())
     if settings.MODE == "demo":
         # Launch demo mode generator as a background task
         asyncio.create_task(run_demo_mode())
@@ -37,6 +39,7 @@ def read_root():
 @app.post("/internal/ingest", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
 def ingest_event(
     payload: CowrieLogEvent, 
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db), 
     secret: str = Depends(verify_ingest_secret)
 ):
@@ -61,7 +64,12 @@ def ingest_event(
     db.commit()
     db.refresh(db_event)
     
-    # TODO: WebSocket Broadcast
+    # WebSocket Broadcast
+    if hasattr(EventResponse, 'model_validate'):
+        event_resp = EventResponse.model_validate(db_event)
+    else:
+        event_resp = EventResponse.from_orm(db_event)
+    background_tasks.add_task(manager.push_event, event_resp)
     
     return db_event
 
@@ -69,3 +77,12 @@ def ingest_event(
 def get_recent_events(limit: int = 50, db: Session = Depends(get_db)):
     events = db.query(Event).order_by(Event.timestamp.desc()).limit(limit).all()
     return events
+
+@app.websocket("/ws/live")
+async def websocket_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)

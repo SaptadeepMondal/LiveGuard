@@ -4,6 +4,8 @@ import uuid
 from datetime import datetime
 from app.db import SessionLocal
 from app.models import Event
+from app.schemas import EventResponse
+from app.ws import manager
 
 # A mock list of IPs and their corresponding geo locations to simulate attacks
 MOCK_LOCATIONS = [
@@ -35,7 +37,6 @@ async def run_demo_mode():
             protocol = PROTOCOLS[PORTS.index(port)]
             
             event = Event(
-                id=str(uuid.uuid4()),
                 timestamp=datetime.utcnow(),
                 src_ip=loc["ip"],
                 src_lat=loc["lat"],
@@ -49,6 +50,15 @@ async def run_demo_mode():
             )
             db.add(event)
             db.commit()
+            db.refresh(event)
+            
+            # WebSocket Broadcast
+            if hasattr(EventResponse, 'model_validate'):
+                event_resp = EventResponse.model_validate(event)
+            else:
+                event_resp = EventResponse.from_orm(event)
+            await manager.push_event(event_resp)
+            
             print(f"[Demo] Generated attack from {loc['country']} on port {port}")
         except Exception as e:
             print(f"Error in demo mode generator: {e}")

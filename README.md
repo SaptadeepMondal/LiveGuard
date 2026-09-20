@@ -10,9 +10,6 @@ This is **not** a literal global DDoS telemetry feed. It is a live intrusion/sca
 - **Interactive World Map**: Uses D3.js to animate attack paths from the source IP to the honeypot in real-time.
 - **Live Stats**: Real-time counters and historical data visualization.
 
-## Current Implementation Status
-**Note**: The project is currently in its early initialization phase. As of now, only the `backend/` directory exists. The `frontend/`, `honeypot/`, and `infra/` components described below are planned but not yet implemented.
-
 ## Architecture Highlights
 The project consists of an isolated honeypot VPS running Cowrie, which ships logs to a FastAPI backend. The backend geolocates the attacker using MaxMind GeoLite2, stores the event, and broadcasts it over WebSockets to a React frontend.
 

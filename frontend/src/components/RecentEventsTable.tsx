@@ -7,44 +7,56 @@ export const RecentEventsTable = () => {
   if (recentEvents.length === 0) return null;
 
   return (
-    <div className="absolute bottom-6 left-6 w-[600px] pointer-events-auto z-20">
-      <div className="backdrop-blur-md bg-surface/80 border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[300px]">
-        <div className="p-4 border-b border-white/5 bg-surface/90">
-          <h2 className="text-sm font-semibold text-white/70 uppercase tracking-widest flex items-center gap-2">
-            <List size={16} className="text-primary" />
-            Recent Intrusions
-          </h2>
-        </div>
-        
-        <div className="overflow-y-auto overflow-x-hidden p-2 custom-scrollbar">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="text-xs text-white/40 uppercase tracking-wider font-mono">
-                <th className="px-4 py-2 font-medium">Time</th>
-                <th className="px-4 py-2 font-medium">Source IP</th>
-                <th className="px-4 py-2 font-medium">Country</th>
-                <th className="px-4 py-2 font-medium">Port</th>
-                <th className="px-4 py-2 font-medium">Protocol</th>
-              </tr>
-            </thead>
-            <tbody className="font-mono text-xs text-white/80">
-              {recentEvents.map((event) => {
-                const time = new Date(event.timestamp).toLocaleTimeString([], { hour12: false });
-                return (
-                  <tr key={event.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                    <td className="px-4 py-3 text-white/50">{time}</td>
-                    <td className="px-4 py-3">{event.src_ip}</td>
-                    <td className="px-4 py-3">
-                      <span className="bg-white/10 px-2 py-1 rounded text-[10px]">{event.src_country}</span>
-                    </td>
-                    <td className="px-4 py-3 text-danger">{event.dst_port}</td>
-                    <td className="px-4 py-3 text-primary uppercase">{event.protocol}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+    <div className="w-full flex-shrink-0 bg-panel border border-border overflow-hidden flex flex-col h-[280px]">
+      <div className="p-3 border-b border-border bg-panel-2">
+        <h2 className="text-[11px] font-semibold text-muted uppercase tracking-[0.15em] flex items-center gap-2">
+          <List size={14} className="text-cyan" />
+          Raw Event Log
+        </h2>
+      </div>
+      
+      <div className="overflow-y-auto overflow-x-hidden p-0 custom-scrollbar flex-1">
+        <table className="w-full text-left border-collapse">
+          <thead className="sticky top-0 bg-panel-2 border-b border-border z-10">
+            <tr className="text-[9px] text-muted uppercase tracking-[0.2em] font-sans font-bold">
+              <th className="px-3 py-1.5 font-normal">Time</th>
+              <th className="px-3 py-1.5 font-normal">Source</th>
+              <th className="px-3 py-1.5 font-normal">Target</th>
+              <th className="px-3 py-1.5 font-normal">Vector</th>
+            </tr>
+          </thead>
+          <tbody className="font-mono text-[10px] text-text">
+            {recentEvents.map((event) => {
+              const date = new Date(event.timestamp);
+              const time = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}.${date.getMilliseconds().toString().padStart(3, '0')}`;
+              
+              const isRed = event.event_type === "DDoS";
+              const isAmber = event.event_type === "Intruders";
+              const typeColor = isRed ? "text-red border-red" : isAmber ? "text-amber border-amber" : "text-cyan border-cyan";
+              return (
+                <tr key={event.id} className="border-b border-border/50 hover:bg-border/30 transition-colors">
+                  <td className="px-3 py-1.5 text-muted whitespace-nowrap">{time}</td>
+                  <td className="px-3 py-1.5 whitespace-nowrap">
+                    <span className="text-muted mr-2">{event.src_country}</span>
+                    {event.src_ip}
+                  </td>
+                  <td className="px-3 py-1.5 whitespace-nowrap">
+                    <span className="text-muted mr-1">{event.protocol.toUpperCase()}</span>
+                    <span className="text-text">{event.dst_port}</span>
+                  </td>
+                  <td className="px-3 py-1.5 whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      <span className={`px-1 py-0.5 border ${typeColor} text-[8px] uppercase tracking-wider`}>
+                        {event.event_type}
+                      </span>
+                      <span className="text-muted truncate max-w-[120px]">{event.payload_snippet || "Unknown"}</span>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );

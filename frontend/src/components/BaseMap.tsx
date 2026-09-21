@@ -34,6 +34,13 @@ export const BaseMap: React.FC = () => {
 
     const pathGenerator = d3.geoPath().projection(projection);
 
+    // Draw Graticule
+    const graticule = d3.geoGraticule10();
+    svg.append("path")
+      .datum(graticule)
+      .attr("class", "grat")
+      .attr("d", pathGenerator);
+
     // Draw Land
     svg.append("g")
       .selectAll("path")
@@ -45,22 +52,40 @@ export const BaseMap: React.FC = () => {
 
     // Draw Honeypot Marker
     const [hx, hy] = projection(HONEYPOT_COORDS) || [0, 0];
+    
     svg.append("circle")
-      .attr("cx", hx)
-      .attr("cy", hy)
-      .attr("r", 4)
-      .attr("fill", "#3b82f6") // Primary Blue
+      .attr("cx", hx).attr("cy", hy).attr("r", 12)
+      .attr("fill", "var(--color-cyan)")
       .attr("class", "marker-pulse");
+      
+    svg.append("circle")
+      .attr("cx", hx).attr("cy", hy).attr("r", 4)
+      .attr("fill", "none").attr("stroke", "var(--color-cyan)").attr("stroke-width", 1);
+      
+    svg.append("circle")
+      .attr("cx", hx).attr("cy", hy).attr("r", 1.5)
+      .attr("fill", "var(--color-cyan)");
+
+    svg.append("text")
+      .attr("x", hx + 16).attr("y", hy + 4)
+      .text("HONEYPOT")
+      .attr("fill", "var(--color-cyan)")
+      .attr("class", "font-mono font-bold")
+      .attr("font-size", "10px")
+      .attr("letter-spacing", "0.1em");
       
     // Handle resize
     const handleResize = () => {
-        svg.attr('width', window.innerWidth).attr('height', window.innerHeight);
-        projection
-            .scale(window.innerWidth / 2 / Math.PI)
-            .translate([window.innerWidth / 2, window.innerHeight / 1.5]);
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        svg.attr('width', w).attr('height', h);
+        projection.scale(w / 2 / Math.PI).translate([w / 2, h / 1.5]);
+        svg.select('.grat').attr('d', pathGenerator as any);
         svg.selectAll('.map-land').attr('d', pathGenerator as any);
+        
         const [nx, ny] = projection(HONEYPOT_COORDS) || [0, 0];
-        svg.select('circle').attr('cx', nx).attr('cy', ny);
+        svg.selectAll('circle').attr('cx', nx).attr('cy', ny);
+        svg.select('text').attr('x', nx + 16).attr('y', ny + 4);
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -71,7 +96,7 @@ export const BaseMap: React.FC = () => {
     <svg 
       ref={svgRef} 
       className="absolute top-0 left-0 w-full h-full z-0" 
-      style={{ background: '#0a0a0a' }}
+      style={{ background: 'transparent' }}
     />
   );
 };

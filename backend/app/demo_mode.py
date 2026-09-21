@@ -20,6 +20,8 @@ MOCK_LOCATIONS = [
 
 PORTS = [22, 23, 80, 443, 3389, 5900]
 PROTOCOLS = ["ssh", "telnet", "http", "https", "rdp", "vnc"]
+EVENT_TYPES = ["Web Attackers", "DDoS", "Intruders", "Scanners", "Anonymizers"]
+VECTORS = ["TCP Flood", "Low & Slow", "ICMP Flood", "UDP Flood", "DNS Amplification", "Credential Stuffing"]
 
 async def run_demo_mode():
     """
@@ -44,8 +46,8 @@ async def run_demo_mode():
                 src_country=loc["country"],
                 dst_port=port,
                 protocol=protocol,
-                event_type="login_attempt",
-                payload_snippet="admin:admin",
+                event_type=random.choice(EVENT_TYPES),
+                payload_snippet=random.choice(VECTORS),
                 source_mode="demo"
             )
             db.add(event)
